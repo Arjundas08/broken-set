@@ -4,7 +4,6 @@ const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
 })
 
-// FEATURE 1: Bill OCR — extract set info from supplier invoice photo
 export async function extractBillData(base64Image: string): Promise<{
   supplier_name: string
   product_name: string
@@ -14,23 +13,18 @@ export async function extractBillData(base64Image: string): Promise<{
   confidence: number
 }> {
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 1000,
-    messages: [
-      {
-        role: 'user',
-        content: [
-          {
-            type: 'image',
-            source: {
-              type: 'base64',
-              media_type: 'image/jpeg',
-              data: base64Image,
-            },
-          },
-          {
-            type: 'text',
-            text: `You are an OCR system for a garment wholesale warehouse in India.
+    messages: [{
+      role: 'user',
+      content: [
+        {
+          type: 'image',
+          source: { type: 'base64', media_type: 'image/jpeg', data: base64Image },
+        },
+        {
+          type: 'text',
+          text: `You are an OCR system for a garment wholesale warehouse in India.
 Extract billing information from this supplier invoice image.
 Return ONLY a valid JSON object with these exact fields:
 {
@@ -43,18 +37,14 @@ Return ONLY a valid JSON object with these exact fields:
 }
 If you cannot read a field clearly, use reasonable defaults.
 Return ONLY the JSON, no other text.`,
-          },
-        ],
-      },
-    ],
+        },
+      ],
+    }],
   })
-
   const text = response.content[0].type === 'text' ? response.content[0].text : '{}'
-  const clean = text.replace(/```json|```/g, '').trim()
-  return JSON.parse(clean)
+  return JSON.parse(text.replace(/```json|```/g, '').trim())
 }
 
-// FEATURE 2: Theft Pattern Detection — analyze discrepancy logs
 export async function detectTheftPatterns(data: {
   discrepancies: Array<{
     staff_name: string
@@ -74,12 +64,11 @@ export async function detectTheftPatterns(data: {
   confidence: number
 }> {
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 1000,
-    messages: [
-      {
-        role: 'user',
-        content: `You are an inventory theft detection AI for a garment wholesale warehouse in India.
+    messages: [{
+      role: 'user',
+      content: `You are an inventory theft detection AI for a garment wholesale warehouse in India.
 Analyze these discrepancy logs from the last ${data.period_days} days and identify theft patterns.
 
 DISCREPANCY DATA:
@@ -95,16 +84,12 @@ Return ONLY a valid JSON object with these exact fields:
   "confidence": confidence score 0-100
 }
 Return ONLY the JSON, no other text.`,
-      },
-    ],
+    }],
   })
-
   const text = response.content[0].type === 'text' ? response.content[0].text : '{}'
-  const clean = text.replace(/```json|```/g, '').trim()
-  return JSON.parse(clean)
+  return JSON.parse(text.replace(/```json|```/g, '').trim())
 }
 
-// FEATURE 3: Smart Audit Suggestions
 export async function suggestAudits(batches: Array<{
   batch_id: string
   product_name: string
@@ -118,12 +103,11 @@ export async function suggestAudits(batches: Array<{
   urgency: 'low' | 'medium' | 'high'
 }[]> {
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 1000,
-    messages: [
-      {
-        role: 'user',
-        content: `You are an inventory audit scheduler for a garment warehouse.
+    messages: [{
+      role: 'user',
+      content: `You are an inventory audit scheduler for a garment warehouse.
 Based on these batches, suggest which ones need urgent spot audits.
 
 BATCH DATA:
@@ -138,11 +122,8 @@ Return ONLY a valid JSON array:
   }
 ]
 Sort by urgency descending. Return ONLY the JSON array, no other text.`,
-      },
-    ],
+    }],
   })
-
   const text = response.content[0].type === 'text' ? response.content[0].text : '[]'
-  const clean = text.replace(/```json|```/g, '').trim()
-  return JSON.parse(clean)
+  return JSON.parse(text.replace(/```json|```/g, '').trim())
 }
